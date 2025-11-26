@@ -1,0 +1,13 @@
+# секреты
+.env
+
+# пользовательские данные
+data/orders/
+data/user_ids.json
+data/user_messages.json
+
+# кэш питона
+__pycache__/
+*.pyc
+bot/__pycache__/
+bot/**/*.pyc
