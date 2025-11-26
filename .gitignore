@@ -5,6 +5,11 @@
 data/orders/
 data/user_ids.json
 data/user_messages.json
+data/drinks.json
+data/order_counts.json
+data/shop_status.json
+data/spy_status.json
+data/order_intake_status.json
 
 # кэш питона
 __pycache__/
