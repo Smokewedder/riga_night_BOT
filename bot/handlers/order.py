@@ -88,7 +88,8 @@ def now_local() -> datetime:
 
 def get_workday_key(dt: Optional[datetime] = None) -> str:
     dt = dt or now_local()
-    if dt.hour < 8:
+    # ИСПРАВЛЕНО: Сдвигаем рабочий день с 8 до 4 утра для ночной работы
+    if dt.hour < 4:
         dt = dt - timedelta(days=1)
     return dt.strftime("%Y-%m-%d")
 
@@ -340,15 +341,19 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
         if data == "show_categories":
             items = session["data"].get("items", [])
             total = sum(float(it.get("sum", 0)) for it in items)
-            diff = 15 - total if total < 15 else 0
+            # ИСПРАВЛЕНО: 15 -> 25
+            diff = 25 - total if total < 25 else 0
 
             # 💵 Заголовок с информацией о корзине
             if diff > 0:
                 balance_info = tr(
                     lang,
-                    f"💵 Current total: {total:.2f}€\n🧾 You need {diff:.2f}€ more to reach the minimum order (15.00€).\n\n",
-                    f"💵 Сейчас в корзине: {total:.2f}€\n🧾 Осталось добавить: {diff:.2f}€, чтобы оформить заказ (мин. 15.00€).\n\n",
-                    f"💵 Pašlaik grozā: {total:.2f}€\n🧾 Jums jāpieliek vēl {diff:.2f}€, lai sasniegtu minimālo pasūtījumu (15.00€).\n\n",
+                    # ИСПРАВЛЕНО: 15.00€ -> 25.00€
+                    f"💵 Current total: {total:.2f}€\n🧾 You need {diff:.2f}€ more to reach the minimum order (25.00€).\n\n",
+                    # ИСПРАВЛЕНО: 15.00€ -> 25.00€
+                    f"💵 Сейчас в корзине: {total:.2f}€\n🧾 Осталось добавить: {diff:.2f}€, чтобы оформить заказ (мин. 25.00€).\n\n",
+                    # ИСПРАВЛЕНО: 15.00€ -> 25.00€
+                    f"💵 Pašlaik grozā: {total:.2f}€\n🧾 Jums jāpieliek vēl {diff:.2f}€, lai sasniegtu minimālo pasūtījumu (25.00€).\n\n",
                 )
             else:
                 balance_info = tr(
@@ -386,24 +391,29 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
             total = sum(float(it.get("sum", 0)) for it in items)
 
             # ✅ Проверка минимальной суммы
-            if total < 15:
-                diff = 15 - total  # сколько не хватает до минимальной суммы
+            # ИСПРАВЛЕНО: 15 -> 25
+            if total < 25:
+                # ИСПРАВЛЕНО: 15 -> 25
+                diff = 25 - total  # сколько не хватает до минимальной суммы
                 warn_text = tr(
                     lang,
+                    # ИСПРАВЛЕНО: 15.00€ -> 25.00€
                     (
-                        f"❌ Minimum order amount is 15.00€.\n"
+                        f"❌ Minimum order amount is 25.00€.\n"
                         f"💵 Your current total is {total:.2f}€.\n"
                         f"🧾 You need to add {diff:.2f}€ more to continue.\n\n"
                         "🛍 Please add more drinks to your cart."
                     ),
+                    # ИСПРАВЛЕНО: 15.00€ -> 25.00€
                     (
-                        f"❌ Минимальная сумма заказа — 15.00€.\n"
+                        f"❌ Минимальная сумма заказа — 25.00€.\n"
                         f"💵 Сейчас в корзине: {total:.2f}€.\n"
                         f"🧾 Добавьте ещё на {diff:.2f}€, чтобы оформить заказ.\n\n"
                         "🛍 Пожалуйста, выберите дополнительные напитки."
                     ),
+                    # ИСПРАВЛЕНО: 15.00€ -> 25.00€
                     (
-                        f"❌ Minimālā pasūtījuma summa ir 15.00€.\n"
+                        f"❌ Minimālā pasūtījuma summa ir 25.00€.\n"
                         f"💵 Jūsu pašreizējā summa: {total:.2f}€.\n"
                         f"🧾 Jums jāpieliek vēl {diff:.2f}€, lai turpinātu.\n\n"
                         "🛍 Lūdzu, pievienojiet vēl dzērienus grozam."
@@ -423,7 +433,7 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
                 )
                 return  # ⛔ не переходим к шагу region
 
-            # ✅ Если сумма >= 15€, продолжаем оформление как обычно
+            # ✅ Если сумма >= 25€, продолжаем оформление как обычно
             try:
                 await query.message.delete()
             except Exception:

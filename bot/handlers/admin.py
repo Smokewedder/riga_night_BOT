@@ -3,7 +3,9 @@ from telegram import Update
 from telegram.ext import ContextTypes
 from bot.config import ADMIN_IDS
 from bot.utils.data import load_user_ids
-from bot.handlers.spy import set_spy_status, get_spy_status
+
+# импортируем новые функции
+from bot.handlers.spy import set_spy_status_for_admin, get_spy_status_for_admin
 
 SHOP_STATUS_FILE = "data/shop_status.json"
 
@@ -12,7 +14,16 @@ SHOP_STATUS_FILE = "data/shop_status.json"
 
 def is_admin(user_id: int) -> bool:
     """Проверка, является ли пользователь админом"""
-    return str(user_id) in [str(a) for a in ADMIN_IDS]
+    # ADMIN_IDS может быть списком или строкой
+    try:
+        if isinstance(ADMIN_IDS, (list, tuple, set)):
+            return int(user_id) in {int(x) for x in ADMIN_IDS if x}
+        if isinstance(ADMIN_IDS, str):
+            parts = [p.strip() for p in ADMIN_IDS.split(",") if p.strip()]
+            return str(user_id) in parts or int(user_id) in {int(p) for p in parts}
+    except Exception:
+        pass
+    return False
 
 
 def set_shop_status(is_open: bool):
@@ -151,22 +162,39 @@ def shop_is_open() -> bool:
     """Используется в order.py для проверки перед оформлением заказа"""
     return get_shop_status()
 
+
+# ===== Переписанные /spyon и /spyoff (per-admin) =====
+
 async def spy_on_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Команда /spyon — включить Spy Mode"""
-    user_id = update.effective_user.id
+    """Команда /spyon — включить Spy Mode только для текущего админа"""
+    user = update.effective_user
+    user_id = user.id
     if not is_admin(user_id):
         await update.message.reply_text("⛔ У вас нет прав для этой команды.")
         return
 
-    set_spy_status(True)
-    await update.message.reply_text("Spy mode on🟢")
+    set_spy_status_for_admin(user_id, True)
+    await update.message.reply_text("🟢 Spy mode включён только для вас.")
+
 
 async def spy_off_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Команда /spyoff — выключить Spy Mode"""
+    """Команда /spyoff — выключить Spy Mode только для текущего админа"""
+    user = update.effective_user
+    user_id = user.id
+    if not is_admin(user_id):
+        await update.message.reply_text("⛔ У вас нет прав для этой команды.")
+        return
+
+    set_spy_status_for_admin(user_id, False)
+    await update.message.reply_text("🔴 Spy mode выключен только для вас.")
+
+
+async def spystatus_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Команда /spystatus — показать текущий статус Spy для админа"""
     user_id = update.effective_user.id
     if not is_admin(user_id):
         await update.message.reply_text("⛔ У вас нет прав для этой команды.")
         return
 
-    set_spy_status(False)
-    await update.message.reply_text("Spy mode off🔴")
+    status = get_spy_status_for_admin(user_id)
+    await update.message.reply_text(f"Spy mode: {'🟢 ON' if status else '🔴 OFF'}")
